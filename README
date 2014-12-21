@@ -1,0 +1,56 @@
+Hi fellows,
+
+this is a persistence layer for Haskell.
+
+For an example see the file TestObject.hs.
+
+
+--------------------------------------------------------------------------------
+
+
+IDEAS for further improvement
+-----------------------------
+
+
+    -- IDEA:
+
+    -- what about using quasi quotes to generate the data structures. so
+    -- something like the following:
+
+    share [persist|
+      Test
+          nr INTEGER NOT NULL PRIMARY KEY
+          name VARCHAR(30)
+      |]
+
+    -- could generate the data declaration with immutable primary key and make
+    -- it an instance of DBObject:
+
+       module Test
+              ( DBTestObject (Test)
+              , name
+              , nr
+              ) where
+
+       import DBObject
+       -- import ...
+
+       data DBTestObject = Test
+                           { nrPk   :: Int
+                           , name   :: String
+                           } deriving (Show)
+
+
+       nr :: DBTestObject -> Int
+       nr = nrPk
+
+       instance DBObject DBTestObject where
+         dbCols _ = ["nr", "name"]
+         dbColsDataTypes _ = ["INTEGER NOT NULL", "VARCHAR(30)"]
+         dbColsPrimaryKey _ = ["nr"]
+         dbData (Test nr' name') = [show nr', show name']
+         dbSetData obj d = obj { nrPk = fromSql $ d !! 0
+                               , name = fromSql $ d !! 1}
+         dbCreateStmtAddCreateDefinition _ = "PRIMARY KEY (nr)"
+
+
